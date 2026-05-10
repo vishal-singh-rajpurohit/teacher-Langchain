@@ -8,12 +8,10 @@ pwd_context = CryptContext(
 )
 
 def hash_password(password: str) -> str:
-    sha = hashlib.sha256(password.encode("utf-8")).hexdigest()
-    return pwd_context.hash(sha)
+    return pwd_context.hash(password)
 
-def verify_password(plain_password: str, hashed: str) -> bool:
-    sha = hashlib.sha256(plain_password.encode("utf-8")).hexdigest()
-    return pwd_context.verify(sha, hashed)
+def verify_password(password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(password, hashed_password)    
     
 def verify_webhook_signature(body: bytes, signature: str, secret: str) -> bool:
     generated_signature = hmac.new(

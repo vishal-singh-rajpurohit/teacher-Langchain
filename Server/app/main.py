@@ -6,6 +6,7 @@ import os
 from .db.session import Base, engine
 
 from .routes.auth import auth_router
+from .routes.task import task_router
 
 from .models.user import User
 from .models.chats import Chat
@@ -34,6 +35,7 @@ Base.metadata.create_all(bind=engine)
 
 
 app.include_router(auth_router, prefix='/api/v1')
+app.include_router(task_router, prefix='/api/v1')
 
 
 @app.get('/')

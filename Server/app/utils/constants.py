@@ -6,3 +6,7 @@ COOKIE_OPTIONS = {
     'secure' : False,
     'samesite': "lax",
 }
+
+MODELS_DICT = {
+    'label_gen_model': "deepseek-ai/DeepSeek-V4-Pro"
+}

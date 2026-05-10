@@ -8,14 +8,14 @@ from ..utils.hash import hash_password, verify_password
 from ..utils.tokens import genrate_token, TokenPayload
 from ..models.user import User
 from ..utils.constants import COOKIE_OPTIONS
+from ..utils.mail.mail import send_registration_mail
 import os
 
 
 ACCESS_TOKEN_SECRET = os.getenv("ACCESS_TOKEN_SECRET")
 REFRESH_TOKEN_SECRET = os.getenv("REFRESH_TOKEN_SECRET")
 
-
-async def signup( req: Request, resp: Response, payload: RegisterReqSchema, db: Session = Depends(get_db)):
+async def signup(req: Request, resp: Response, payload: RegisterReqSchema, db: Session = Depends(get_db)):
     if not payload.name or not payload.email or not payload.password or not payload.conform_password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -35,67 +35,80 @@ async def signup( req: Request, resp: Response, payload: RegisterReqSchema, db: 
             status_code=status.HTTP_409_CONFLICT,
             detail={"message": "User already exists with this email"}
         )
+    
+    try:
+        hashed_password = hash_password(payload.password)
 
-    hashed_password = hash_password(payload.password)
+        new_user = User(
+            name=payload.name,
+            email=payload.email,
+            password=hashed_password
+        )
 
-    new_user = User(
-        name=payload.name,
-        email=payload.email,
-        password=hashed_password
-    )
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
 
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+        token_payload = TokenPayload(
+            id=new_user.id,
+            email=new_user.email
+        )
 
-    token_payload = TokenPayload(
-        id=new_user.id,
-        email=new_user.email
-    )
+        access_token = genrate_token(
+            paylod=token_payload,
+            secret_key=ACCESS_TOKEN_SECRET,
+            expiry="30"
+        )
 
-    access_token = genrate_token(
-        paylod=token_payload,
-        secret_key=ACCESS_TOKEN_SECRET,
-        expiry="30"
-    )
+        refresh_token = genrate_token(
+            paylod=token_payload,
+            secret_key=REFRESH_TOKEN_SECRET,
+            expiry="10080"  # 7 days
+        )
 
-    refresh_token = genrate_token(
-        paylod=token_payload,
-        secret_key=REFRESH_TOKEN_SECRET,
-        expiry="10080"  # 7 days
-    )
+        new_user.refresh_token = refresh_token
+        db.commit()
+        db.refresh(new_user)
 
-    new_user.refresh_token = refresh_token
-    db.commit()
-    db.refresh(new_user)
+        resp.set_cookie(
+            key="ACCESS_TOKEN",
+            value=access_token,
+            httponly=True,
+            secure=False,  # True in production with HTTPS
+            samesite="lax",
+            max_age=30 * 60
+        )
 
-    resp.set_cookie(
-        key="ACCESS_TOKEN",
-        value=access_token,
-        httponly=True,
-        secure=False,  # True in production with HTTPS
-        samesite="lax",
-        max_age=30 * 60
-    )
+        resp.set_cookie(
+            key="REFRESH_TOKEN",
+            value=refresh_token,
+            httponly=True,
+            secure=False,  # True in production with HTTPS
+            samesite="lax",
+            max_age=7 * 24 * 60 * 60
+        )
 
-    resp.set_cookie(
-        key="REFRESH_TOKEN",
-        value=refresh_token,
-        httponly=True,
-        secure=False,  # True in production with HTTPS
-        samesite="lax",
-        max_age=7 * 24 * 60 * 60
-    )
+        await send_registration_mail(
+            to=new_user.email,
+            name=new_user.name
+        )
 
-    return LoginResp(
-        message="User registered successfully",
-        name=new_user.name,
-        email=new_user.email,
-        credits_token=new_user.credits_token,
-        is_verified=new_user.is_verified
-    )
+        return LoginResp(
+            message="User registered successfully",
+            name=new_user.name,
+            email=new_user.email,
+            credits_token=new_user.credits_token,
+            is_verified=new_user.is_verified
+        )
+    except Exception as e:
+        db.rollback()
+        print('Error in: ', e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"message": "User not created"}
+        )
 
-async def login( resp: Response, payload: LoginReqSchema, db: Session = Depends(get_db)):
+async def login(resp: Response, payload: LoginReqSchema, db: Session = Depends(get_db)):
     if not payload.email or not payload.password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -135,37 +148,47 @@ async def login( resp: Response, payload: LoginReqSchema, db: Session = Depends(
         expiry="10080"
     )
 
-    user.refresh_token = refresh_token
-    db.commit()
-    db.refresh(user)
+    try:
+        user.refresh_token = refresh_token
+        db.commit()
+        db.refresh(user)
 
-    resp.set_cookie(
-        key="ACCESS_TOKEN",
-        value=access_token,
-        httponly=True,
-        secure=False,
-        samesite="lax",
-        max_age=30 * 60
-    )
+        resp.set_cookie(
+            key="ACCESS_TOKEN",
+            value=access_token,
+            httponly=True,
+            secure=False,
+            samesite="lax",
+            max_age=30 * 60
+        )
 
-    resp.set_cookie(
-        key="REFRESH_TOKEN",
-        value=refresh_token,
-        httponly=True,
-        secure=False,
-        samesite="lax",
-        max_age=7 * 24 * 60 * 60
-    )
+        resp.set_cookie(
+            key="REFRESH_TOKEN",
+            value=refresh_token,
+            httponly=True,
+            secure=False,
+            samesite="lax",
+            max_age=7 * 24 * 60 * 60
+        )
 
-    return LoginResp(
-        message="User registered successfully",
-        name=user.name,
-        email=user.email,
-        credits_token=user.credits_token,
-        is_verified=user.is_verified
-    )
+        return LoginResp(
+            message="User registered successfully",
+            name=user.name,
+            email=user.email,
+            credits_token=user.credits_token,
+            is_verified=user.is_verified
+        )
+    except:
+        db.rollback()
 
-async def check_email_available(payload: CheckMailReqSchema, db: Session) -> bool:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            details={
+                'message': 'Cannot Save details'
+            }
+        )
+
+async def check_email_available(payload: CheckMailReqSchema, db: Session = Depends(get_db)) -> bool:
 
     if not payload.email:
         raise HTTPException(
@@ -199,7 +222,6 @@ async def logout(req: Request, resp: Response, db: Session = Depends(get_db)):
 
         user = db.query(User).filter(User.id == auth_user.id).first()
 
-        user.access_token = ""
         user.refresh_token = ""
 
         db.commit()
@@ -228,8 +250,8 @@ async def check_already(req: Request, resp: Response, db:Session = Depends(get_d
                 'message': 'Unautharized Acccess'
             })
 
-    access_token = genrate_token(TokenPayload(id=auth_user.id, email=auth_user.mail), ACCESS_TOKEN_SECRET)
-    refresh_token = genrate_token(TokenPayload(id=auth_user.id, email=auth_user.mail), REFRESH_TOKEN_SECRET)
+    access_token = genrate_token(TokenPayload(id=auth_user.id, email=auth_user.email), ACCESS_TOKEN_SECRET)
+    refresh_token = genrate_token(TokenPayload(id=auth_user.id, email=auth_user.email), REFRESH_TOKEN_SECRET)
 
     if not refresh_token or not access_token:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,  detail={
@@ -245,7 +267,6 @@ async def check_already(req: Request, resp: Response, db:Session = Depends(get_d
             'message': 'User not found but created'
         })
     
-    user.access_token = access_token
     user.refresh_token = refresh_token
     
     db.commit()
@@ -266,9 +287,14 @@ async def check_already(req: Request, resp: Response, db:Session = Depends(get_d
             )
 
     return LoginResp(
-        message="User registered successfully",
+        message="User Loggedin successfully",
         name=user.name,
         email=user.email,
         credits_token=user.credits_token,
         is_verified=user.is_verified
     )
+
+# Send Verification OTP
+# Verify OTP
+# Send Reset OTP
+# Reset Password

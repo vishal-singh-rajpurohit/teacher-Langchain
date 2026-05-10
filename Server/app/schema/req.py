@@ -14,3 +14,7 @@ class LoginReqSchema(BaseModel):
 
 class CheckMailReqSchema(BaseModel):
     email: EmailStr
+
+class SimplePromptReqSchema(BaseModel):
+    prompt: str
+

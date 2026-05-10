@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from ..db.session import Base
@@ -11,7 +11,7 @@ class Task(Base):
     
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
-    title = Column(String(150), nullable=False)
+    title = Column(Text, nullable=False)
     initial_prompt = Column(String, nullable=True)
 
     is_active = Column(Boolean, default=True, nullable=False)
