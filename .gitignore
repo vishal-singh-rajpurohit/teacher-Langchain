@@ -1,0 +1,32 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+.DS_Store
+
+# Python / FastAPI
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+venv/
+.env
+.env.*
+.pytest_cache/
+*.sqlite3
+
+# General
+*.log
+*.sqlite
+*.db
+*.pyc
+.idea/
+.vscode/
+coverage/
+dist/
+build/
