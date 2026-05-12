@@ -5,7 +5,7 @@ from typing import Dict
 from dotenv import load_dotenv
 import os
 
-from .templates import forget_passowrd_otp, password_reset_mail, registration_mail, verification_otp, verified_mail
+from .templates import forget_passowrd_otp, password_reset_template, registration_mail, verification_otp, verified_mail
 
 load_dotenv()
 
@@ -52,7 +52,7 @@ async def password_reset_mail(to: str, name: str):
         "from": "onboarding@resend.dev",
         "to": [f'{to}'],
         "subject": f'Your account password is successully reset',
-        "html":  password_reset_mail(name) ,
+        "html":  password_reset_template(name) ,
     }
     email: resend.Email = resend.Emails.send(params)
 

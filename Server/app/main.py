@@ -4,14 +4,12 @@ from dotenv import load_dotenv
 import os
 
 from .db.session import Base, engine
-
 from .routes.auth import auth_router
 from .routes.task import task_router
-
 from .models.user import User
 from .models.chats import Chat
 from .models.tasks import Task
-
+from .models.otp import OTP
 
 load_dotenv()
 

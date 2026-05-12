@@ -1,13 +1,15 @@
 from fastapi import APIRouter, status, Request, Depends, Response
 from sqlalchemy.orm import Session
-from ..db.session import get_db
-from typing import Annotated
-from ..middleware.auth_middleware import is_loggedin
-from ..controllers.auth import check_email_available, check_already, login, signup, logout
-from ..schema.resp import LoginResp, CheckEmailAvilableResp
-from ..schema.req import CheckMailReqSchema, LoginReqSchema, RegisterReqSchema 
 from dotenv import load_dotenv
+from typing import Annotated
 import os
+
+from ..db.session import get_db
+from ..middleware.auth_middleware import is_loggedin
+from ..schema.resp import LoginResp, CheckEmailAvilableResp
+from ..schema.req import CheckMailReqSchema, LoginReqSchema, RegisterReqSchema, OTPEmailReqSchema, ResetPassSchema, OTPReqSchema
+
+from ..controllers.auth import check_email_available, check_already, login, signup, logout, verify_account, send_reset_otp, verify_reset_otp, reset_password
 
 load_dotenv()
 
@@ -48,5 +50,19 @@ async def root(req: Request, resp: Response, db:Session = Depends(get_db)):
 async def root(payload: CheckMailReqSchema, db:Session = Depends(get_db)):
     return await check_email_available(payload, db)
 
+@auth_router.post('/verify-account', status_code=status.HTTP_200_OK, dependencies= [Depends(is_loggedin)])
+async def root(req: Request, payload: OTPReqSchema, db:Session = Depends(get_db)):
+    return await verify_account(req, payload, db)
 
+@auth_router.post('/forgot-password', status_code=status.HTTP_200_OK)
+async def root(payload: CheckMailReqSchema, db:Session = Depends(get_db)):
+    return await send_reset_otp(payload, db)
+
+@auth_router.post('/verify-forgot-password', status_code=status.HTTP_200_OK)
+async def root(resp: Response, payload: OTPEmailReqSchema, db:Session = Depends(get_db)):
+    return await verify_reset_otp(resp,payload, db)
+
+@auth_router.post('/reset-password', status_code=status.HTTP_200_OK)
+async def root(req: Request, resp: Response, payload: ResetPassSchema, db:Session = Depends(get_db)):
+    return await reset_password(req, resp, payload, db)
 

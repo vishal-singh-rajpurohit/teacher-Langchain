@@ -22,3 +22,4 @@ class User(Base):
 
     # 🔗 Relationships
     tasks = relationship("Task", back_populates="user", cascade="all, delete")
+    otps = relationship("OTP", back_populates="user", cascade="all, delete")

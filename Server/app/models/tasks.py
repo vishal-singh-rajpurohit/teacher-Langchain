@@ -16,6 +16,8 @@ class Task(Base):
 
     is_active = Column(Boolean, default=True, nullable=False)
 
+    has_file = Column(Boolean, default=False)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
