@@ -28,7 +28,7 @@ export function TasksMain({ open, onClose }: TasksMainProps) {
     const router = useRouter()
     const disp = useAppDispatch();
     const searchOpen = useAppSelector(state => state.temp.searching);
-    
+
     const tasks = useAppSelector(state => state.chat.tasks)
 
     const [searchValue, setSearchValue] = useState("")
@@ -43,7 +43,13 @@ export function TasksMain({ open, onClose }: TasksMainProps) {
         throw new Error('Context not found')
     }
 
-    const { startNewChat } = context;
+    const { startNewChat, load_task } = context;
+
+    async function load_task_ful(id: number){
+        await load_task(id)
+        router.push(`/?id=${id}`)
+        onClose()
+    }
 
     return (
         <section
@@ -112,6 +118,7 @@ export function TasksMain({ open, onClose }: TasksMainProps) {
                         {filteredTasks.length > 0 ? (
                             filteredTasks.map((item) => (
                                 <TaskList
+                                    select={load_task_ful}
                                     key={item.id}
                                     id={item.id}
                                     title={item.title}
@@ -133,7 +140,8 @@ export function TasksMain({ open, onClose }: TasksMainProps) {
 interface TaskListType {
     id: number
     title: string
-    updatedAt: string
+    updatedAt: string,
+    select: (id: number) => void
 }
 
 export function TaskList(props: TaskListType) {
@@ -145,7 +153,7 @@ export function TaskList(props: TaskListType) {
 
     const { startNewChat } = context;
     return (
-        <button onClick={() => startNewChat(props.id)} className="w-full rounded-2xl px-4 py-3 text-left text-sm text-neutral-700 transition hover:bg-neutral-100">
+        <button onClick={async () => await props.select(props.id)} className="w-full rounded-2xl px-4 py-3 text-left text-sm text-neutral-700 transition hover:bg-neutral-100">
             {props.title}
         </button>
     )

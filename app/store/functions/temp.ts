@@ -1,3 +1,4 @@
+import { TaskTypes } from "@/types/chats";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface initialTypes {
@@ -5,13 +6,20 @@ interface initialTypes {
     searching: boolean;
     email: string;
     chat_id: string;
+    selected_chat: TaskTypes
 }
 
 const initialState: initialTypes = {
     loading: false,
     searching: false,
     email: "",
-    chat_id: ""
+    chat_id: "",
+    selected_chat: {
+        id: 0,
+        title: '',
+        updated_at: '',
+        conversation: []
+    }
 }
 
 function setLoadingState(state: initialTypes, action: PayloadAction<{ toggle: boolean }>) {
@@ -26,9 +34,15 @@ function setEmailFunc(state: initialTypes, action: PayloadAction<{email: string}
     state.email = action.payload.email
 }
 
-function setSelectChatFunc(state: initialTypes, action: PayloadAction<{id: string}>){
-    state.chat_id = action.payload.id
+function setSelectChatFunc(state: initialTypes, action: PayloadAction<{
+    id: string;
+    task: TaskTypes;
+}>){
+    state.chat_id = action.payload.id;
+    state.selected_chat = action.payload.task;
 }
+
+
 
 
 export const tempSlice = createSlice({

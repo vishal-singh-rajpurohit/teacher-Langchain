@@ -203,7 +203,15 @@ async def create_file_embeddings(req: Request, payload: EmbeedReqSchema):
     
     return SimpleResp(message="Embedding Created")
 
-async def ask_query(req: Request, resp: Response, payload: QueryReqSchema, db: Session = Depends(get_db)):
+from fastapi.responses import StreamingResponse
+import json
+
+
+async def ask_query(
+    req: Request,
+    payload: QueryReqSchema,
+    db: Session = Depends(get_db)
+):
     user = req.state.user
 
     if not user:
@@ -211,13 +219,7 @@ async def ask_query(req: Request, resp: Response, payload: QueryReqSchema, db: S
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"message": "Unauthorized Access"}
         )
-    
-    if not payload.id or not payload.query:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": "Query or id required"}
-        )
-    
+
     task = db.query(Task).filter(
         Task.id == int(payload.id),
         Task.user_id == user.id
@@ -228,85 +230,73 @@ async def ask_query(req: Request, resp: Response, payload: QueryReqSchema, db: S
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"message": "Task not found or unauthorized"}
         )
-    
-    try:
-        has_file = task.has_file
 
-        retriever = vector_store.as_retriever(
-            search_type="similarity",
-            search_kwargs={
-                "k": 5,
-                "filter": {
-                    "$and": [
-                        {"task_id": {"$eq": str(task.id)}},
-                        {"user_id": {"$eq": str(user.id)}}
-                    ]
+    async def event_generator():
+        full_answer = ""
+
+        try:
+            has_file = task.has_file
+
+            retriever = vector_store.as_retriever(
+                search_type="similarity",
+                search_kwargs={
+                    "k": 5,
+                    "filter": {
+                        "$and": [
+                            {"task_id": {"$eq": str(task.id)}},
+                            {"user_id": {"$eq": str(user.id)}}
+                        ]
+                    }
                 }
-            }
-        )
-
-        query_chain = (
-            RunnableBranch(
-                (
-                    lambda x: has_file,
-                    RunnableParallel({
-                        "content": retriever,
-                        "query": RunnablePassthrough()
-                    })
-                ),
-                RunnableParallel({
-                    "query": RunnablePassthrough(),
-                })
             )
-            |
-            RunnablePassthrough.assign(
-                format_instructions=lambda _: pydantic_parser.get_format_instructions()
+
+            if has_file:
+                docs = retriever.invoke(payload.query)
+                content = "\n\n".join([doc.page_content for doc in docs])
+
+                prompt = answer_prompt_template.format_messages(
+                    content=content,
+                    query=payload.query,
+                    format_instructions="Return only the answer text."
+                )
+            else:
+                prompt = general_query_prompt.format_messages(
+                    query=payload.query
+                )
+
+            async for chunk in label_model.astream(prompt):
+                token = chunk.content or ""
+                full_answer += token
+
+                yield f"data: {json.dumps({'token': token})}\n\n"
+
+            new_chat = Chat(
+                task_id=task.id,
+                prompt=payload.query,
+                response=full_answer
             )
-            |
-            RunnableBranch(
-                (
-                    lambda x: has_file,
-                    answer_prompt_template
-                ),
-                general_query_prompt
-            )
-            |
-            label_model
-            |
-            pydantic_parser
-        )
 
-        result = query_chain.invoke(payload.query)
+            db.add(new_chat)
+            db.commit()
+            db.refresh(new_chat)
 
-        new_chat = Chat(
-            task_id=task.id,
-            prompt=payload.query,
-            response=result.answer
-        )
+            yield f"data: {json.dumps({
+                'done': True,
+                'chat_id': new_chat.id,
+                'task_id': task.id
+            })}\n\n"
 
-        db.add(new_chat)
-        db.commit()
-        db.refresh(new_chat)
+        except Exception as e:
+            db.rollback()
+            yield f"data: {json.dumps({
+                'error': True,
+                'message': 'Cannot process query'
+            })}\n\n"
 
-        data = AnswerDataResp(
-            chat_id = new_chat.id,
-            task_id = task.id,
-            query = payload.query,
-            answer = result.answer
-        )
-
-        return AskQueryResp(
-            success = True,
-            message = "Query answered successfully",
-            result = data
-        )
-
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"message": "Cannot process query"}
-        )
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream"
+    )
 
 async def get_chats(req: Request, id: str, db: Session = Depends(get_db)):
     user = req.state.user

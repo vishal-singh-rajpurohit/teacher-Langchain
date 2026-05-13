@@ -1,10 +1,12 @@
 "use client"
 import { CircleEllipsis, MessageCirclePlus, Sparkles } from "lucide-react"
 import { ChatOptions } from "../options/Chat"
-import type {Message} from './Messages'
+import {ChatBox, type Message} from './Messages'
 import ContextModal from "../modal/ContextModel"
+import { useSelector } from "react-redux"
+import { useAppSelector } from "@/store/hook"
 
-const InitialteCmp = () => {
+const InitialteCmp = () => { 
     return (
         <section className="flex h-full items-center justify-center px-4">
             <div className="max-w-md text-center">
@@ -38,30 +40,30 @@ const InitialteCmp = () => {
     )
 }
 
-const messages: Message[] = [
-    { id: "1", role: "user", content: "Hi!" },
-    { id: "2", role: "assistant", content: "Hello! How can I help you?" },
-    { id: "3", role: "user", content: "Tell me a joke." },
-    { id: "4", role: "assistant", content: "Why don’t programmers like nature? Too many bugs." },
-    { id: "5", role: "user", content: "Haha nice." },
-    { id: "6", role: "assistant", content: "Glad you liked it!" },
-    { id: "7", role: "user", content: "What is TypeScript?" },
-    { id: "8", role: "assistant", content: "TypeScript is a typed superset of JavaScript." },
-    { id: "9", role: "user", content: "Is it hard to learn?" },
-    { id: "10", role: "assistant", content: "Not really, especially if you know JavaScript." },
-    { id: "11", role: "user", content: "Cool." },
-    { id: "12", role: "assistant", content: "Anything else you'd like to know?" },
-    { id: "13", role: "user", content: "Explain interfaces." },
-    { id: "14", role: "assistant", content: "Interfaces define the shape of objects." },
-    { id: "15", role: "user", content: "Give example." },
-    { id: "16", role: "assistant", content: "Sure! interface User { name: string; age: number; }" },
-    { id: "17", role: "user", content: "Nice." },
-    { id: "18", role: "assistant", content: "Happy to help!" },
-    { id: "19", role: "user", content: "What about types?" },
-    { id: "20", role: "assistant", content: "Types are similar but more flexible than interfaces." },
-    { id: "21", role: "user", content: "Thanks!" },
-    { id: "22", role: "assistant", content: "You're welcome!" }
-]
+// const messages: Message[] = [
+//     { id: "1", role: "user", content: "Hi!" },
+//     { id: "2", role: "assistant", content: "Hello! How can I help you?" },
+//     { id: "3", role: "user", content: "Tell me a joke." },
+//     { id: "4", role: "assistant", content: "Why don’t programmers like nature? Too many bugs." },
+//     { id: "5", role: "user", content: "Haha nice." },
+//     { id: "6", role: "assistant", content: "Glad you liked it!" },
+//     { id: "7", role: "user", content: "What is TypeScript?" },
+//     { id: "8", role: "assistant", content: "TypeScript is a typed superset of JavaScript." },
+//     { id: "9", role: "user", content: "Is it hard to learn?" },
+//     { id: "10", role: "assistant", content: "Not really, especially if you know JavaScript." },
+//     { id: "11", role: "user", content: "Cool." },
+//     { id: "12", role: "assistant", content: "Anything else you'd like to know?" },
+//     { id: "13", role: "user", content: "Explain interfaces." },
+//     { id: "14", role: "assistant", content: "Interfaces define the shape of objects." },
+//     { id: "15", role: "user", content: "Give example." },
+//     { id: "16", role: "assistant", content: "Sure! interface User { name: string; age: number; }" },
+//     { id: "17", role: "user", content: "Nice." },
+//     { id: "18", role: "assistant", content: "Happy to help!" },
+//     { id: "19", role: "user", content: "What about types?" },
+//     { id: "20", role: "assistant", content: "Types are similar but more flexible than interfaces." },
+//     { id: "21", role: "user", content: "Thanks!" },
+//     { id: "22", role: "assistant", content: "You're welcome!" }
+// ]
 
 
 interface MainProps {
@@ -69,6 +71,8 @@ interface MainProps {
 }
 
 const Main = ({ onOpenTasks }: MainProps) => {
+
+    const selected_chat = useAppSelector(state=>state.temp.selected_chat)
     
     return (
         <section className="relative flex h-screen w-full flex-col overflow-hidden bg-white">
@@ -89,8 +93,14 @@ const Main = ({ onOpenTasks }: MainProps) => {
 
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto pb-28">
-                <InitialteCmp />
-                {/* <ChatBox messages={messages} /> */}
+                {
+                    selected_chat.id ? (
+                        <ChatBox messages={selected_chat.conversation} />
+                    ): (
+                        <InitialteCmp />
+                    )
+                }
+                
                 {/* <ContextModal onClose={()=>{}} open={true} /> */}
             </main>
 

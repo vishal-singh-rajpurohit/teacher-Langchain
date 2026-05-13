@@ -32,7 +32,7 @@ async def root(req: Request, payload: EmbeedReqSchema):
 
 @task_router.post('/query', status_code=status.HTTP_200_OK)
 async def root(req: Request, resp: Response, paylod: QueryReqSchema, db: Session = Depends(get_db)):
-    return await ask_query(req, resp, paylod, db)
+    return await ask_query(req, paylod, db)
 
 @task_router.post('/edit-query', status_code=status.HTTP_200_OK)
 async def root(req: Request, payload: EditQueryReqSchema, db: Session = Depends(get_db)):
