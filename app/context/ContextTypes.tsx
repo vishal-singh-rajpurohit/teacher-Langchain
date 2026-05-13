@@ -1,3 +1,3 @@
 export interface AppContextTypes{
-    startNewChat: (id: string) =>void
+    startNewChat: (id: number) =>void
 }

@@ -9,12 +9,14 @@ class LoginResp(BaseModel):
     is_verified: bool
     credits_token: int
     tasks: List[TasksResp]
+    updated_at: datetime
     class Config:
         from_attributes = True
 
 class CheckEmailAvilableResp(BaseModel):
     message: str
     success: bool
+
     class Config:
         from_attributes = True
 
@@ -35,7 +37,6 @@ class NewTaskResp(BaseModel):
     
     class Config:
         from_attributes = True
-
 
 class SimpleResp(BaseModel):
     message: str
@@ -61,7 +62,6 @@ class AnswerDataResp(BaseModel):
         from_attributes = True
         populate_by_name = True
 
-
 class AskQueryResp(BaseModel):
     message: str
     success: bool
@@ -69,7 +69,6 @@ class AskQueryResp(BaseModel):
 
     class Config:
         from_attributes = True
-
 
 class ChatDataResp(BaseModel):
     id: int
@@ -94,3 +93,4 @@ class TaskChatResp(BaseModel):
 
     class Config:
         from_attributes = True
+        

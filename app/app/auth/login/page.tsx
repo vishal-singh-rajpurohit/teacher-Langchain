@@ -1,7 +1,13 @@
 "use client"
-
+import api from "@/config/axios.config"
+import { login } from "@/store/functions/auth"
+import { initialLoad } from "@/store/functions/chat"
+import { useAppDispatch } from "@/store/hook"
+import { RegisterAPIRespTypes } from "@/types/apiResponse.types"
+import { AxiosResponse } from "axios"
 import { Eye, EyeOff, Lock, Mail } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 
 export default function LoginPage() {
@@ -9,8 +15,10 @@ export default function LoginPage() {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
+    const disp = useAppDispatch()
+    const router = useRouter()
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
 
         const newErrors: { email?: string; password?: string } = {}
@@ -25,7 +33,27 @@ export default function LoginPage() {
 
         if (Object.keys(newErrors).length > 0) return
 
-        console.log({ email, password })
+        const resp: AxiosResponse<RegisterAPIRespTypes> = await api.post('/auth/login', {
+            email: email,
+            password: password
+        }, {
+            withCredentials: true
+        })
+
+        disp(login({
+            data: {
+                name: resp.data.name,
+                email: resp.data.email,
+                credits_token: resp.data.credits_token,
+                is_verified: resp.data.is_verified,
+                joinedAt: resp.data.updated_at
+            }
+        }))
+
+        disp(initialLoad({ data: resp.data.tasks }))
+
+        if (!resp.data.is_verified) router.replace('/auth/verify')
+        else router.replace('/')
     }
 
     return (
@@ -54,11 +82,10 @@ export default function LoginPage() {
                                 placeholder="Email address"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className={`w-full rounded-2xl border bg-neutral-50 py-3 pl-11 pr-4 text-sm outline-none transition focus:bg-white ${
-                                    errors.email
-                                        ? "border-red-400 focus:border-red-500"
-                                        : "border-neutral-200 focus:border-black"
-                                }`}
+                                className={`w-full rounded-2xl border bg-neutral-50 py-3 pl-11 pr-4 text-sm outline-none transition focus:bg-white ${errors.email
+                                    ? "border-red-400 focus:border-red-500"
+                                    : "border-neutral-200 focus:border-black"
+                                    }`}
                             />
                         </div>
                         {errors.email && (
@@ -76,11 +103,10 @@ export default function LoginPage() {
                                 placeholder="Password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className={`w-full rounded-2xl border bg-neutral-50 py-3 pl-11 pr-12 text-sm outline-none transition focus:bg-white ${
-                                    errors.password
-                                        ? "border-red-400 focus:border-red-500"
-                                        : "border-neutral-200 focus:border-black"
-                                }`}
+                                className={`w-full rounded-2xl border bg-neutral-50 py-3 pl-11 pr-12 text-sm outline-none transition focus:bg-white ${errors.password
+                                    ? "border-red-400 focus:border-red-500"
+                                    : "border-neutral-200 focus:border-black"
+                                    }`}
                             />
 
                             <button
@@ -97,6 +123,21 @@ export default function LoginPage() {
                                 {errors.password}
                             </p>
                         )}
+                    </div>
+
+                    {errors.password && (
+                        <p className="mt-1.5 px-1 text-xs text-red-500">
+                            {errors.password}
+                        </p>
+                    )}
+
+                    <div className="flex justify-end">
+                        <Link
+                            href="/auth/forgot"
+                            className="text-xs font-medium text-neutral-600 transition hover:text-black"
+                        >
+                            Forgot password?
+                        </Link>
                     </div>
 
                     <button

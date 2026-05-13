@@ -1,12 +1,99 @@
 "use client"
-
 import { Eye, EyeOff, Lock, Mail, User } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
+import { FormEvent, useEffect, useState } from "react"
+import api from '@/config/axios.config'
+import { RegisterAPITypes } from "@/types/apiRequest.types"
+import { AxiosResponse } from "axios"
+import { RegisterAPIRespTypes } from "@/types/apiResponse.types"
+import { useAppDispatch } from "@/store/hook"
+import { login } from "@/store/functions/auth"
+import { useRouter } from "next/navigation"
 
 export default function RegisterPage() {
+
+    const disp = useAppDispatch()
+    const router = useRouter()
+
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirm, setShowConfirm] = useState(false)
+
+    const [errors, setErrors] = useState<{
+        name?: string
+        email?: string
+        password?: string
+        conform_password?: string
+    }>({})
+
+    const [checkingEmail, setCheckingEmail] = useState(false)
+
+    const [userDet, setUserDet] = useState<RegisterAPITypes>({
+        email: '',
+        name: '',
+        password: '',
+        conform_password: '',
+    })
+
+    async function register(e: FormEvent<HTMLFormElement>) {
+        try {
+            e.preventDefault()
+            const resp: AxiosResponse<RegisterAPIRespTypes> = await api.post('/auth/register', userDet, {
+                withCredentials: true
+            })
+
+            disp(login({
+                data: {
+                    name: resp.data.name,
+                    email: resp.data.email,
+                    credits_token: resp.data.credits_token,
+                    is_verified: resp.data.is_verified,
+                    joinedAt: resp.data.updated_at
+                }
+            }))
+
+            setUserDet({
+                email: '',
+                name: '',
+                password: '',
+                conform_password: '',
+            })
+
+            router.replace('/auth/verify')
+
+        } catch (error) {
+            console.log('Error in register: ', error)
+        }
+    }
+
+
+
+    useEffect(() => {
+        if (!userDet.email.trim()) return
+
+        const timer = setTimeout(async () => {
+            try {
+                setCheckingEmail(true)
+
+                await api.post("/auth/is-email-avilable", {
+                    email: userDet.email,
+                })
+
+                setErrors((prev) => ({
+                    ...prev,
+                    email: "",
+                }))
+            } catch (error) {
+                setErrors((prev) => ({
+                    ...prev,
+                    email: "Email already exists",
+                }))
+            } finally {
+                setCheckingEmail(false)
+            }
+        }, 600)
+
+        return () => clearTimeout(timer)
+    }, [userDet.email])
 
     return (
         <section className="flex min-h-screen items-center justify-center bg-neutral-950 px-4 py-8">
@@ -25,12 +112,13 @@ export default function RegisterPage() {
                     </p>
                 </div>
 
-                <form className="space-y-4">
+                <form className="space-y-4" onSubmit={register}>
                     <div className="relative">
                         <User className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={18} />
                         <input
                             type="text"
                             placeholder="Full name"
+                            onChange={(e) => setUserDet({ ...userDet, name: e.target.value })}
                             className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 py-3 pl-11 pr-4 text-sm outline-none transition focus:border-black focus:bg-white"
                         />
                     </div>
@@ -39,9 +127,24 @@ export default function RegisterPage() {
                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={18} />
                         <input
                             type="email"
+                            value={userDet.email}
                             placeholder="Email address"
-                            className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 py-3 pl-11 pr-4 text-sm outline-none transition focus:border-black focus:bg-white"
+                            onChange={(e) =>
+                                setUserDet({ ...userDet, email: e.target.value })
+                            }
+                            className={`w-full rounded-2xl border bg-neutral-50 py-3 pl-11 pr-4 text-sm outline-none transition focus:bg-white ${errors.email
+                                    ? "border-red-400 focus:border-red-500"
+                                    : "border-neutral-200 focus:border-black"
+                                }`}
                         />
+
+                        {checkingEmail && (
+                            <p className="mt-1 text-xs text-neutral-400">Checking email...</p>
+                        )}
+
+                        {errors.email && (
+                            <p className="mt-1 text-xs text-red-500">{errors.email}</p>
+                        )}
                     </div>
 
                     <div className="relative">
@@ -49,6 +152,7 @@ export default function RegisterPage() {
                         <input
                             type={showPassword ? "text" : "password"}
                             placeholder="Password"
+                            onChange={(e) => setUserDet({ ...userDet, password: e.target.value })}
                             className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 py-3 pl-11 pr-12 text-sm outline-none transition focus:border-black focus:bg-white"
                         />
                         <button
@@ -65,6 +169,7 @@ export default function RegisterPage() {
                         <input
                             type={showConfirm ? "text" : "password"}
                             placeholder="Confirm password"
+                            onChange={(e) => setUserDet({ ...userDet, conform_password: e.target.value })}
                             className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 py-3 pl-11 pr-12 text-sm outline-none transition focus:border-black focus:bg-white"
                         />
                         <button

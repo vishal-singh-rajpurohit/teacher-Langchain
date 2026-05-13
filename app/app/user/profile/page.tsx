@@ -1,5 +1,6 @@
 "use client"
 
+import api from "@/config/axios.config"
 import { useAppSelector } from "@/store/hook"
 import { ArrowLeft, LogOut, Mail, User } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -14,7 +15,14 @@ export default function ProfilePage() {
         router.back()
     }
 
-    function onLogout(){}
+    async function onLogout(){
+        try {
+            await api.get('/auth/logout', {withCredentials: true})
+            router.replace('/auth/login')
+        } catch (error) {
+            console.log('Error in Logout: ', error)
+        }
+    }
 
     const {email, joinedAt, name} = useAppSelector(state=>state.auth)
 
@@ -65,7 +73,7 @@ export default function ProfilePage() {
                 {/* Logout */}
                 <button
                     onClick={onLogout}
-                    className="mt-8 flex w-full max-w-md items-center justify-center gap-2 rounded-2xl bg-black py-3 text-sm font-semibold text-white transition hover:bg-neutral-800"
+                    className="mt-8 flex w-full max-w-md items-center cursor-pointer justify-center gap-2 rounded-2xl bg-black py-3 text-sm font-semibold text-white transition hover:bg-neutral-800"
                 >
                     <LogOut size={18} />
                     Logout

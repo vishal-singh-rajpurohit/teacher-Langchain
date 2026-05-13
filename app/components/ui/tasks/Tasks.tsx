@@ -6,18 +6,18 @@ import { CircleUser, Search, X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useContext, useState } from "react"
 
-const Tasks = [
-    { id: "1", title: "Finish project report", updatedAt: new Date().toISOString() },
-    { id: "2", title: "Buy groceries", updatedAt: new Date().toISOString() },
-    { id: "3", title: "Call client for feedback", updatedAt: new Date().toISOString() },
-    { id: "4", title: "Prepare presentation slides", updatedAt: new Date().toISOString() },
-    { id: "5", title: "Fix login bug", updatedAt: new Date().toISOString() },
-    { id: "6", title: "Read new tech article", updatedAt: new Date().toISOString() },
-    { id: "7", title: "Workout session", updatedAt: new Date().toISOString() },
-    { id: "8", title: "Plan weekend trip", updatedAt: new Date().toISOString() },
-    { id: "9", title: "Clean workspace", updatedAt: new Date().toISOString() },
-    { id: "10", title: "Update resume", updatedAt: new Date().toISOString() },
-]
+// const Tasks = [
+//     { id: "1", title: "Finish project report", updatedAt: new Date().toISOString() },
+//     { id: "2", title: "Buy groceries", updatedAt: new Date().toISOString() },
+//     { id: "3", title: "Call client for feedback", updatedAt: new Date().toISOString() },
+//     { id: "4", title: "Prepare presentation slides", updatedAt: new Date().toISOString() },
+//     { id: "5", title: "Fix login bug", updatedAt: new Date().toISOString() },
+//     { id: "6", title: "Read new tech article", updatedAt: new Date().toISOString() },
+//     { id: "7", title: "Workout session", updatedAt: new Date().toISOString() },
+//     { id: "8", title: "Plan weekend trip", updatedAt: new Date().toISOString() },
+//     { id: "9", title: "Clean workspace", updatedAt: new Date().toISOString() },
+//     { id: "10", title: "Update resume", updatedAt: new Date().toISOString() },
+// ]
 
 interface TasksMainProps {
     open: boolean
@@ -28,20 +28,22 @@ export function TasksMain({ open, onClose }: TasksMainProps) {
     const router = useRouter()
     const disp = useAppDispatch();
     const searchOpen = useAppSelector(state => state.temp.searching);
+    
+    const tasks = useAppSelector(state => state.chat.tasks)
 
     const [searchValue, setSearchValue] = useState("")
 
-    const filteredTasks = Tasks.filter((task) =>
+    const filteredTasks = tasks.filter((task) =>
         task.title.toLowerCase().includes(searchValue.toLowerCase())
     )
 
     const context = useContext(AppContext)
 
-    if(!context){
+    if (!context) {
         throw new Error('Context not found')
     }
 
-    const {startNewChat} = context;
+    const { startNewChat } = context;
 
     return (
         <section
@@ -87,7 +89,7 @@ export function TasksMain({ open, onClose }: TasksMainProps) {
                                 </button>
 
                                 <button className="rounded-xl p-2 text-neutral-600 hover:bg-neutral-100">
-                                    <CircleUser onClick={()=>router.push('/user/profile')} size={21} />
+                                    <CircleUser onClick={() => router.push('/user/profile')} size={21} />
                                 </button>
 
                                 <button
@@ -113,7 +115,7 @@ export function TasksMain({ open, onClose }: TasksMainProps) {
                                     key={item.id}
                                     id={item.id}
                                     title={item.title}
-                                    updatedAt={item.updatedAt}
+                                    updatedAt={item.updated_at}
                                 />
                             ))
                         ) : (
@@ -129,7 +131,7 @@ export function TasksMain({ open, onClose }: TasksMainProps) {
 }
 
 interface TaskListType {
-    id: string
+    id: number
     title: string
     updatedAt: string
 }
@@ -137,13 +139,13 @@ interface TaskListType {
 export function TaskList(props: TaskListType) {
     const context = useContext(AppContext)
 
-    if(!context){
+    if (!context) {
         throw new Error('Context not found')
     }
 
-    const {startNewChat} = context;
+    const { startNewChat } = context;
     return (
-        <button onClick={()=>startNewChat(props.id)} className="w-full rounded-2xl px-4 py-3 text-left text-sm text-neutral-700 transition hover:bg-neutral-100">
+        <button onClick={() => startNewChat(props.id)} className="w-full rounded-2xl px-4 py-3 text-left text-sm text-neutral-700 transition hover:bg-neutral-100">
             {props.title}
         </button>
     )

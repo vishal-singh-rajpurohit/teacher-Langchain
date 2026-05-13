@@ -20,17 +20,11 @@ REFRESH_TOKEN_SECRET = os.getenv("REFRESH_TOKEN_SECRET")
 
 db_depandency = Annotated[Session, Depends(get_db)]
 
-@auth_router.get('/')
-def root():
-    return{
-        'message': 'Hello'
-    }
-
 # @auth_router.post('/', response_model=LoginResp, status_code=status.HTTP_200_OK, dependencies= [Depends(is_loggedin)])
 # async def root(payload: CheckMailReqSchema, db:Session = Depends(get_db)):
 #     return await check_email_available(payload, db)
 
-@auth_router.post('/', response_model=LoginResp, status_code=status.HTTP_200_OK, dependencies= [Depends(is_loggedin)])
+@auth_router.get('/', response_model=LoginResp, status_code=status.HTTP_200_OK, dependencies= [Depends(is_loggedin)])
 async def root(req: Request, resp: Response, db:Session = Depends(get_db)):
     return await check_already(req, resp, db)
 

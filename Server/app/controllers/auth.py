@@ -14,7 +14,7 @@ from ..utils.tokens import genrate_token, TokenPayload, genrate_session_token, S
 from ..models.user import User
 from ..models.tasks import Task
 from ..models.otp import OTP
-from ..utils.constants import COOKIE_OPTIONS
+from ..utils.constants import COOKIE_OPTIONS, ACCESS_TOKEN_EXPIRE_SECONDS, REFRESH_TOKEN_EXPIRE_SECONDS
 from ..utils.mail.mail import send_registration_mail, send_verification_otp, send_verified_mail, send_forget_otp, password_reset_mail
 
 
@@ -89,19 +89,19 @@ async def signup(req: Request, resp: Response, payload: RegisterReqSchema, db: S
         resp.set_cookie(
             key="ACCESS_TOKEN",
             value=access_token,
-            httponly=True,
-            secure=False,  # True in production with HTTPS
-            samesite="lax",
-            max_age=30 * 60
+            httponly=COOKIE_OPTIONS['httponly'],
+            secure=COOKIE_OPTIONS['secure'],  # True in production with HTTPS
+            samesite=COOKIE_OPTIONS['samesite'],
+            max_age=ACCESS_TOKEN_EXPIRE_SECONDS
         )
 
         resp.set_cookie(
             key="REFRESH_TOKEN",
             value=refresh_token,
-            httponly=True,
-            secure=False,  # True in production with HTTPS
-            samesite="lax",
-            max_age=7 * 24 * 60 * 60
+            httponly=COOKIE_OPTIONS['httponly'],
+            secure=COOKIE_OPTIONS['secure'],  # True in production with HTTPS
+            samesite=COOKIE_OPTIONS['samesite'],
+            max_age=REFRESH_TOKEN_EXPIRE_SECONDS
         )
 
         await send_registration_mail(
@@ -133,6 +133,7 @@ async def signup(req: Request, resp: Response, payload: RegisterReqSchema, db: S
             email=new_user.email,
             credits_token=new_user.credits_token,
             is_verified=new_user.is_verified,
+            updated_at=new_user.updated_at,
             tasks=result
         )
     except Exception as e:
@@ -184,34 +185,30 @@ async def login(resp: Response, payload: LoginReqSchema, db: Session = Depends(g
     )
 
     try:
-        print('one')
         user.refresh_token = refresh_token
         db.commit()
         db.refresh(user)
 
-        print('one')
-
         result = db.query(Task).filter(Task.user_id == user.id).all()
-
-        print('one')
 
         resp.set_cookie(
             key="ACCESS_TOKEN",
             value=access_token,
-            httponly=True,
-            secure=False,
-            samesite="lax",
-            max_age=30 * 60
+            httponly=COOKIE_OPTIONS['httponly'],
+            secure=COOKIE_OPTIONS['secure'],  # True in production with HTTPS
+            samesite=COOKIE_OPTIONS['samesite'],
+            max_age=ACCESS_TOKEN_EXPIRE_SECONDS
         )
 
         resp.set_cookie(
             key="REFRESH_TOKEN",
             value=refresh_token,
-            httponly=True,
-            secure=False,
-            samesite="lax",
-            max_age=7 * 24 * 60 * 60
+            httponly=COOKIE_OPTIONS['httponly'],
+            secure=COOKIE_OPTIONS['secure'],  # True in production with HTTPS
+            samesite=COOKIE_OPTIONS['samesite'],
+            max_age= REFRESH_TOKEN_EXPIRE_SECONDS
         )
+
 
         if not user.is_verified:
             otp = genrate_otp()
@@ -232,13 +229,13 @@ async def login(resp: Response, payload: LoginReqSchema, db: Session = Depends(g
                 otp=otp
             )
 
-        print('one')
         return LoginResp(
             message="User registered successfully",
             name=user.name,
             email=user.email,
             credits_token=user.credits_token,
             is_verified=user.is_verified,
+            updated_at=user.updated_at,
             tasks=result
         )
     except Exception as e:
@@ -252,6 +249,7 @@ async def login(resp: Response, payload: LoginReqSchema, db: Session = Depends(g
         )
 
 async def verify_account( req: Request, payload: OTPReqSchema, db: Session = Depends(get_db)):
+
     auth_user = req.state.user
 
     otp = payload.otp
@@ -407,15 +405,17 @@ async def check_already(req: Request, resp: Response, db:Session = Depends(get_d
             value=access_token,
             httponly=COOKIE_OPTIONS['httponly'],
             secure=COOKIE_OPTIONS['secure'],
-            samesite=COOKIE_OPTIONS['samesite']
-            )
+            samesite=COOKIE_OPTIONS['samesite'],
+            max_age=ACCESS_TOKEN_EXPIRE_SECONDS
+        )
     resp.set_cookie(
             key='REFRESH_TOKEN',
             value=refresh_token,
             httponly=COOKIE_OPTIONS['httponly'],
             secure=COOKIE_OPTIONS['secure'],
-            samesite=COOKIE_OPTIONS['samesite']
-            )
+            samesite=COOKIE_OPTIONS['samesite'],
+            max_age=REFRESH_TOKEN_EXPIRE_SECONDS
+        )
     
     if not user.is_verified:
         otp = genrate_otp()
@@ -442,6 +442,7 @@ async def check_already(req: Request, resp: Response, db:Session = Depends(get_d
         email=user.email,
         credits_token=user.credits_token,
         is_verified=user.is_verified,
+        updated_at=user.updated_at,
         tasks=result
     )
 
