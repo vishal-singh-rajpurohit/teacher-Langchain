@@ -1,15 +1,18 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from dotenv import load_dotenv
-import os
+from ..core.config import get_settings
 
-load_dotenv()
+settings = get_settings()
 
-DB_URI = os.getenv('PGQL_URL')
-
-# print('PGQL_URL: ', DB_URI)
-
-engine = create_engine(DB_URI)
+engine = create_engine(
+    settings.pgql_url,
+    pool_pre_ping=True,
+    pool_size=settings.db_pool_size,
+    max_overflow=settings.db_max_overflow,
+    pool_timeout=settings.db_pool_timeout,
+    pool_recycle=settings.db_pool_recycle,
+    future=True,
+)
 
 LocalSession = sessionmaker(
     autocommit=False,

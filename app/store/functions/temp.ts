@@ -1,25 +1,21 @@
-import { TaskTypes } from "@/types/chats";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface initialTypes {
     loading: boolean;
     searching: boolean;
     email: string;
-    chat_id: string;
-    selected_chat: TaskTypes
+    contextModalOpen: boolean;
+    composerContext: string;
+    webSearchEnabled: boolean;
 }
 
 const initialState: initialTypes = {
     loading: false,
     searching: false,
     email: "",
-    chat_id: "",
-    selected_chat: {
-        id: 0,
-        title: '',
-        updated_at: '',
-        conversation: []
-    }
+    contextModalOpen: false,
+    composerContext: "",
+    webSearchEnabled: false,
 }
 
 function setLoadingState(state: initialTypes, action: PayloadAction<{ toggle: boolean }>) {
@@ -34,12 +30,20 @@ function setEmailFunc(state: initialTypes, action: PayloadAction<{email: string}
     state.email = action.payload.email
 }
 
-function setSelectChatFunc(state: initialTypes, action: PayloadAction<{
-    id: string;
-    task: TaskTypes;
-}>){
-    state.chat_id = action.payload.id;
-    state.selected_chat = action.payload.task;
+function setContextModalFunc(state: initialTypes, action: PayloadAction<{ toggle: boolean }>) {
+    state.contextModalOpen = action.payload.toggle
+}
+
+function setComposerContextFunc(state: initialTypes, action: PayloadAction<{ context: string }>) {
+    state.composerContext = action.payload.context
+}
+
+function clearComposerContextFunc(state: initialTypes) {
+    state.composerContext = ""
+}
+
+function setWebSearchFunc(state: initialTypes, action: PayloadAction<{ enabled: boolean }>) {
+    state.webSearchEnabled = action.payload.enabled
 }
 
 
@@ -52,9 +56,20 @@ export const tempSlice = createSlice({
         setLoading: setLoadingState,
         setSearch: setSearchState,
         setTempEmail: setEmailFunc,
-        setSelectChat: setSelectChatFunc
+        setContextModal: setContextModalFunc,
+        setComposerContext: setComposerContextFunc,
+        clearComposerContext: clearComposerContextFunc,
+        setWebSearch: setWebSearchFunc,
     }
 })
 
-export const { setLoading, setSearch, setTempEmail, setSelectChat } = tempSlice.actions;
+export const {
+    clearComposerContext,
+    setComposerContext,
+    setContextModal,
+    setLoading,
+    setSearch,
+    setTempEmail,
+    setWebSearch,
+} = tempSlice.actions;
 export default tempSlice.reducer;

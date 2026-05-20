@@ -82,9 +82,7 @@ async def signup(req: Request, resp: Response, payload: RegisterReqSchema, db: S
         db.commit()
         db.refresh(new_user)
 
-        result = db.query(Task)\
-        .join(User, Task.user_id == User.id)\
-        .all()
+        result = db.query(Task).filter(Task.user_id == new_user.id).all()
 
         resp.set_cookie(
             key="ACCESS_TOKEN",
@@ -138,7 +136,6 @@ async def signup(req: Request, resp: Response, payload: RegisterReqSchema, db: S
         )
     except Exception as e:
         db.rollback()
-        print('Error in: ', e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"message": "User not created"}
@@ -240,7 +237,6 @@ async def login(resp: Response, payload: LoginReqSchema, db: Session = Depends(g
         )
     except Exception as e:
         db.rollback()
-        print('Error in: ', e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
@@ -360,7 +356,6 @@ async def logout(req: Request, resp: Response, db: Session = Depends(get_db)):
 
     except Exception as e:
         db.rollback()
-        print(f'error in: {e}')
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail={
                 'message': 'Unautharized access'
             })
@@ -396,9 +391,7 @@ async def check_already(req: Request, resp: Response, db:Session = Depends(get_d
     
     db.commit()
 
-    result = db.query(Task)\
-        .join(User, Task.user_id == User.id)\
-        .all()
+    result = db.query(Task).filter(Task.user_id == user.id).all()
 
     resp.set_cookie(
             key='ACCESS_TOKEN',
@@ -546,8 +539,8 @@ async def verify_reset_otp( resp: Response, payload: OTPEmailReqSchema, db: Sess
             key="RESET_TOKEN",
             value=reset_token,
             httponly=True,
-            secure=False,  # True in production with HTTPS
-            samesite="lax",
+            secure=COOKIE_OPTIONS["secure"],
+            samesite=COOKIE_OPTIONS["samesite"],
             max_age=60 * 60
         )
 

@@ -43,3 +43,8 @@ class QueryReqSchema(BaseModel):
 class EditQueryReqSchema(QueryReqSchema):
     chat_id: str
 
+class ChatStreamReqSchema(BaseModel):
+    prompt: str
+    useWebSearch: bool = False
+    context: str | None = None
+

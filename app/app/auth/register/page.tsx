@@ -82,7 +82,7 @@ export default function RegisterPage() {
                     ...prev,
                     email: "",
                 }))
-            } catch (error) {
+            } catch {
                 setErrors((prev) => ({
                     ...prev,
                     email: "Email already exists",

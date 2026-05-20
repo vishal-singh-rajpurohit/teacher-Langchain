@@ -47,13 +47,15 @@ def decrypt_token(token:str, secret_key: str):
     try:
         decoded_data = jwt.decode(token, secret_key, algorithms=[ALGO])
         return decoded_data
-    except Exception as e:
-        print(f'error in Decoding: {e}')
+    except jwt.ExpiredSignatureError:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                'message': 'Cannot Decode the Message'
-            }
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"message": "Token expired"}
+        )
+    except jwt.InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"message": "Invalid token"}
         )
 
 

@@ -14,9 +14,7 @@ general_query_prompt = PromptTemplate(
 User Query:
 {query}
 
-IMPORTANT:
-Return your response ONLY in valid JSON format.
-
+Response format:
 {format_instructions}
 """,
     input_variables=["query", "format_instructions"]
@@ -46,8 +44,6 @@ Content:
 User Query:
 {query}
 
-IMPORTANT:
-Return your response ONLY in valid JSON format.
-
+Response format:
 {format_instructions}
 """)

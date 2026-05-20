@@ -10,3 +10,9 @@ export interface LoginAPITypes{
     password: string;
 }
 
+export interface SendChatStreamRequestTypes {
+    prompt: string;
+    useWebSearch: boolean;
+    context: string | null;
+}
+

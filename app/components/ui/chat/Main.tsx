@@ -1,112 +1,139 @@
 "use client"
-import { CircleEllipsis, MessageCirclePlus, Sparkles } from "lucide-react"
-import { ChatOptions } from "../options/Chat"
-import {ChatBox, type Message} from './Messages'
-import ContextModal from "../modal/ContextModel"
-import { useSelector } from "react-redux"
-import { useAppSelector } from "@/store/hook"
 
-const InitialteCmp = () => { 
+import { AppContext } from "@/context/AppContext"
+import { setContextModal } from "@/store/functions/temp"
+import { useAppDispatch } from "@/store/hook"
+import { useAppSelector } from "@/store/hook"
+import { Bot, FileUp, MessageCirclePlus, PanelLeft, Sparkles } from "lucide-react"
+import { useContext } from "react"
+import { ChatOptions } from "../options/Chat"
+import { ChatBox } from "./Messages"
+
+const starterPrompts = [
+    "Summarize this PDF",
+    "Find the key risks and recommendations",
+    "Create study notes from this document",
+]
+
+const InitialteCmp = ({ onPrompt }: { onPrompt: (prompt: string) => void }) => {
+    const dispatch = useAppDispatch()
+
     return (
-        <section className="flex h-full items-center justify-center px-4">
-            <div className="max-w-md text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-100">
-                    <Sparkles size={26} className="text-neutral-700" />
+        <section className="flex min-h-full items-center justify-center px-4 py-10">
+            <div className="w-full max-w-3xl">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-teal-50 text-teal-700 ring-1 ring-teal-100">
+                    <Bot size={30} />
                 </div>
 
-                <h1 className="text-2xl font-semibold text-neutral-900">
-                    Start by asking questions
+                <h1 className="mt-5 text-center text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl">
+                    PDF AI Agent
                 </h1>
 
-                <p className="mt-2 text-sm leading-6 text-neutral-500">
-                    Upload PDFs, search the web, and ask anything from your documents.
+                <p className="mx-auto mt-3 max-w-xl text-center text-sm leading-6 text-neutral-500 sm:text-base">
+                    Upload a PDF, then ask for summaries, explanations, tables, citations, or document-aware answers.
                 </p>
 
-                <div className="mt-6 grid gap-3 text-left text-sm">
-                    <button className="rounded-2xl border bg-white px-4 py-3 text-neutral-700 shadow-sm transition hover:bg-neutral-50">
-                        Summarize this PDF
+                <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                    <button
+                        onClick={() => dispatch(setContextModal({ toggle: true }))}
+                        className="flex min-h-28 flex-col justify-between rounded-lg border border-teal-200 bg-teal-50 p-4 text-left text-teal-950 transition hover:bg-teal-100"
+                    >
+                        <FileUp size={22} />
+                        <span className="text-sm font-semibold">Upload PDF</span>
                     </button>
 
-                    <button className="rounded-2xl border bg-white px-4 py-3 text-neutral-700 shadow-sm transition hover:bg-neutral-50">
-                        Find important points from my document
-                    </button>
-
-                    <button className="rounded-2xl border bg-white px-4 py-3 text-neutral-700 shadow-sm transition hover:bg-neutral-50">
-                        Search answer from uploaded files
-                    </button>
+                    {starterPrompts.map((prompt) => (
+                        <button
+                            key={prompt}
+                            onClick={() => onPrompt(prompt)}
+                            className="flex min-h-28 flex-col justify-between rounded-lg border border-neutral-200 bg-white p-4 text-left text-neutral-800 shadow-sm transition hover:border-neutral-300 hover:bg-neutral-50"
+                        >
+                            <Sparkles size={20} className="text-amber-600" />
+                            <span className="text-sm font-medium">{prompt}</span>
+                        </button>
+                    ))}
                 </div>
             </div>
         </section>
     )
 }
 
-// const messages: Message[] = [
-//     { id: "1", role: "user", content: "Hi!" },
-//     { id: "2", role: "assistant", content: "Hello! How can I help you?" },
-//     { id: "3", role: "user", content: "Tell me a joke." },
-//     { id: "4", role: "assistant", content: "Why don’t programmers like nature? Too many bugs." },
-//     { id: "5", role: "user", content: "Haha nice." },
-//     { id: "6", role: "assistant", content: "Glad you liked it!" },
-//     { id: "7", role: "user", content: "What is TypeScript?" },
-//     { id: "8", role: "assistant", content: "TypeScript is a typed superset of JavaScript." },
-//     { id: "9", role: "user", content: "Is it hard to learn?" },
-//     { id: "10", role: "assistant", content: "Not really, especially if you know JavaScript." },
-//     { id: "11", role: "user", content: "Cool." },
-//     { id: "12", role: "assistant", content: "Anything else you'd like to know?" },
-//     { id: "13", role: "user", content: "Explain interfaces." },
-//     { id: "14", role: "assistant", content: "Interfaces define the shape of objects." },
-//     { id: "15", role: "user", content: "Give example." },
-//     { id: "16", role: "assistant", content: "Sure! interface User { name: string; age: number; }" },
-//     { id: "17", role: "user", content: "Nice." },
-//     { id: "18", role: "assistant", content: "Happy to help!" },
-//     { id: "19", role: "user", content: "What about types?" },
-//     { id: "20", role: "assistant", content: "Types are similar but more flexible than interfaces." },
-//     { id: "21", role: "user", content: "Thanks!" },
-//     { id: "22", role: "assistant", content: "You're welcome!" }
-// ]
-
-
 interface MainProps {
     onOpenTasks?: () => void
 }
 
 const Main = ({ onOpenTasks }: MainProps) => {
+    const selectedTaskId = useAppSelector((state) => state.chat.selectedTaskId)
+    const selectedChat = useAppSelector((state) => state.chat.tasks.find((task) => task.id === state.chat.selectedTaskId))
+    const sending = useAppSelector((state) => state.chat.sending)
 
-    const selected_chat = useAppSelector(state=>state.temp.selected_chat)
-    
+    const context = useContext(AppContext)
+
+    if (!context) {
+        throw new Error("Context not found")
+    }
+
+    const { clear_chats, send_message } = context
+    const title = selectedChat?.title || "New PDF Chat"
+    const fileCount = selectedChat?.pdf_files.length ?? 0
+
     return (
-        <section className="relative flex h-screen w-full flex-col overflow-hidden bg-white">
-            {/* Top Bar */}
-            <header className="flex h-14 shrink-0 items-center justify-between border-b px-4">
-                <button className="rounded-xl p-2 text-neutral-600 transition hover:bg-neutral-100">
-                    <CircleEllipsis onClick={onOpenTasks} size={22} />
-                </button>
+        <section className="relative flex h-svh w-full flex-col overflow-hidden bg-white">
+            <header className="flex h-16 shrink-0 items-center justify-between border-b border-neutral-200 bg-white px-3 sm:px-4">
+                {onOpenTasks ? (
+                    <button
+                        onClick={onOpenTasks}
+                        className="rounded-lg p-2 text-neutral-600 transition hover:bg-neutral-100"
+                        aria-label="Open chats"
+                    >
+                        <PanelLeft size={22} />
+                    </button>
+                ) : (
+                    <div className="w-10" />
+                )}
 
-                <h2 className="text-sm font-medium text-neutral-700">
-                    New RAG Chat
-                </h2>
+                <div className="min-w-0 text-center">
+                    <h2 className="mx-auto max-w-[54vw] truncate text-sm font-semibold text-neutral-900 md:max-w-xl">
+                        {title}
+                    </h2>
+                    <div className="mt-1 flex items-center justify-center gap-2 text-xs text-neutral-500">
+                        <span>{fileCount} PDF{fileCount === 1 ? "" : "s"}</span>
+                        {sending && (
+                            <>
+                                <span className="h-1 w-1 rounded-full bg-neutral-300" />
+                                <span>Thinking</span>
+                            </>
+                        )}
+                    </div>
+                </div>
 
-                <button className="rounded-xl p-2 text-neutral-600 transition hover:bg-neutral-100">
+                <button
+                    className="rounded-lg p-2 text-neutral-600 transition hover:bg-neutral-100"
+                    onClick={clear_chats}
+                    aria-label="Start new chat"
+                >
                     <MessageCirclePlus size={22} />
                 </button>
             </header>
 
-            {/* Main Content */}
-            <main className="flex-1 overflow-y-auto pb-28">
-                {
-                    selected_chat.id ? (
-                        <ChatBox messages={selected_chat.conversation} />
-                    ): (
-                        <InitialteCmp />
-                    )
-                }
-                
-                {/* <ContextModal onClose={()=>{}} open={true} /> */}
+            <main className="flex-1 overflow-y-auto pb-36">
+                {selectedTaskId && selectedChat ? (
+                    <ChatBox messages={selectedChat.conversation} />
+                ) : (
+                    <InitialteCmp
+                        onPrompt={(prompt) => {
+                            void send_message({
+                                prompt,
+                                useWebSearch: false,
+                                context: null,
+                            })
+                        }}
+                    />
+                )}
             </main>
 
-            {/* Chat Input */}
             <div className="absolute bottom-0 left-0 right-0 border-t bg-white">
-                <ChatOptions />
+                <ChatOptions disabled={sending} />
             </div>
         </section>
     )

@@ -18,11 +18,15 @@ async def is_loggedin(req: Request, db: Session = Depends(get_db)):
         req.state.user = None
         return req.state.user
 
-    decoded_data = decrypt_token(token=refresh_token, secret_key=REFRESH_TOKEN_SECRET)
+    try:
+        decoded_data = decrypt_token(token=refresh_token, secret_key=REFRESH_TOKEN_SECRET)
+    except HTTPException:
+        req.state.user = None
+        return req.state.user
 
     user = db.query(User).filter(User.id == decoded_data['id']).first()
 
-    if not user:
+    if not user or user.refresh_token != refresh_token:
         req.state.user = None
         return req.state.user
 

@@ -9,7 +9,7 @@ class Task(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
 
     title = Column(Text, nullable=False)
     initial_prompt = Column(String, nullable=True)
@@ -24,3 +24,4 @@ class Task(Base):
     # 🔗 Relationships
     user = relationship("User", back_populates="tasks")
     chats = relationship("Chat", back_populates="task", cascade="all, delete")
+    pdf_files = relationship("PdfFile", back_populates="task", cascade="all, delete")

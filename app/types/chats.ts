@@ -1,19 +1,28 @@
-export interface TaskTypes{
+export interface PdfFileTypes {
+    id: number;
+    name: string;
+    size: number;
+    task_id: number;
+    created_at: string;
+}
+
+export interface TaskTypes {
     id: number;
     title: string;
     updated_at: string;
     conversation: ChatTypes[];
+    pdf_files: PdfFileTypes[];
 }
 
-export interface OnlyTaskTypes{
+export interface OnlyTaskTypes {
     id: number;
     title: string;
     updated_at: string;
 }
 
+export type ChatStatus = "complete" | "streaming" | "error";
 
-
-export interface ChatTypes{
+export interface ChatTypes {
     id: number;
     prompt: string;
     response: string;
@@ -23,4 +32,7 @@ export interface ChatTypes{
     revised_response: string;
     created_at: string;
     updated_at: string;
+    status?: ChatStatus;
+    error?: string;
+    local?: boolean;
 }

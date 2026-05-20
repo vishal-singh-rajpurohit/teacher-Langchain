@@ -7,10 +7,8 @@ export default function Mobile() {
 
   const [openTasks, setOpenTasks] = useState(false)
 
-  
-
   return (
-    <section >
+    <section className="h-svh w-full overflow-hidden bg-white">
       <TasksMain open={openTasks} onClose={() => setOpenTasks(false)} />
       <Main onOpenTasks={() => setOpenTasks(true)} />
     </section>

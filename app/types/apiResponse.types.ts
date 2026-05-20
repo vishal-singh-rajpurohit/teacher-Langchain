@@ -1,18 +1,12 @@
-import { ChatTypes } from "./chats";
+import { ChatTypes, OnlyTaskTypes, PdfFileTypes } from "./chats";
 
 export interface RegisterAPIRespTypes{
-    email: "",
-    name: "",
-    credits_token: 0,
-    is_verified: false,
-    updated_at: "",
-    tasks: [TaskTypes]
-}
-
-export interface TaskTypes{
-    id: number;
-    title: string;
+    email: string;
+    name: string;
+    credits_token: number;
+    is_verified: boolean;
     updated_at: string;
+    tasks: OnlyTaskTypes[];
 }
 
 export interface LoadTaskAPIRespTypes{
@@ -21,3 +15,22 @@ export interface LoadTaskAPIRespTypes{
     task_id: number;
     result: ChatTypes[]
 }
+
+export interface CreateTaskAPIRespTypes{
+    id?: number;
+    task_id: number;
+    title: string;
+    updated_at: string;
+}
+
+export type UploadPdfAPIRespTypes = PdfFileTypes[] | { files: PdfFileTypes[] };
+
+export type ListPdfAPIRespTypes = PdfFileTypes[] | { files: PdfFileTypes[] };
+
+export type SendChatStreamEventTypes =
+    | { type: "delta"; delta: string }
+    | { type: "done"; message: ChatTypes }
+    | { type: "error"; message: string }
+    | { token: string }
+    | { done: true; chat_id: number; task_id: number }
+    | { error: true; message: string };

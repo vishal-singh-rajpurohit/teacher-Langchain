@@ -9,7 +9,7 @@ class Chat(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
+    task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False, index=True)
 
     is_revised = Column(Boolean, default=False)
 
